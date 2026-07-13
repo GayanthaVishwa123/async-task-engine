@@ -28,6 +28,7 @@ ENV PYTHONUNBUFFERED=1
 # profile enable
 ENV ENABLE_PROFILER=1
 
+
 WORKDIR /app
 RUN chown -R appuser:appuser /app
 

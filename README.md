@@ -21,11 +21,12 @@ The system architecture is designed for optimal performance by splitting workloa
 * **Task Queue & Broker:** Celery & Redis
 * **Database:** MongoDB (`motor` for async, `pymongo` for sync)
 * **Containerization:** Docker & Docker Compose
-* **Environment Management:** Pydantic Settings
+* **Cloud Platform:** Microsoft Azure (Container Apps / App Service)
+* **CI/CD Automation:** GitHub Actions
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Local Development)
 
 Follow these steps to set up and run the project locally on your machine.
 
@@ -34,6 +35,11 @@ Make sure you have the following installed:
 * Python 3.10+
 * Docker & Docker Compose
 
+### 2. Clone the Repository
+```bash
+git clone [https://github.com/GayanthaVishwa123/async-task-engine.git](https://github.com/GayanthaVishwa123/async-task-engine.git)
+cd async-task-engine
+git checkout dev
 ### 2. Clone the Repository
 ```bash
 git clone [https://github.com/GayanthaVishwa123/async-task-engine.git](https://github.com/GayanthaVishwa123/async-task-engine.git)

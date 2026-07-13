@@ -1,47 +1,36 @@
 import time
 
 from celery import Celery
-from celery.utils.log import get_task_logger
 
-logger = get_task_logger(__name__)
+from app.config import settings
 
-celery_app = Celery(
-    "tasks", broker="redis://redis:6379/0", backend="redis://redis:6379/0"
-)
+celery_app = Celery("tasks", broker=settings.REDIS_URL, backend=settings.REDIS_URL)
 
-# Advanced Configuration: Routing tasks to distinct queues
+# Enforce Celery to discover signal receivers
+import app.celery_signals
+
 celery_app.conf.task_routes = {
     "app.tasks.send_critical_notification": {"queue": "high_priority"},
     "app.tasks.send_bulk_notification": {"queue": "low_priority"},
 }
 
 
-# 1. High Priority Task with Exponential Backoff Retries
 @celery_app.task(
-    name="send_critical_notification",
+    name="app.tasks.send_critical_notification",
     bind=True,
-    max_retries=3,
-    default_retry_delay=2,  # starts with 2 seconds
-    autoretry_for=(RuntimeError,),
-    retry_backoff=True,  # Time triples/doubles per retry (2s, 4s, 8s...)
+    max_retries=2,
+    default_retry_delay=4,
 )
 def send_critical_notification(self, email: str, message: str):
-    logger.info(
-        f"Processing critical notification to {email} (Attempt {self.request.retries + 1})"
-    )
-
-    # Simulating a third-party API gateway failure for test cases
-    if "fail" in email:
-        logger.error(f"External notification gateway failed for {email}")
-        raise RuntimeError("Gateway Timeout Connecting to Provider")
+    # 'fail' කියන වචනය ඊමේල් එකේ තිබ්බොත් සිග්නල් සහ රිට්‍රයි ටෙස්ට් කරන්න auto fail කරනවා
+    if "fail" in email.lower():
+        raise RuntimeError("External SMS/Email Gateway Timeout Connection Exception")
 
     time.sleep(1)
-    return {"status": "sent", "priority": "high", "to": email}
+    return {"delivered": True, "channel": "SMS"}
 
 
-# 2. Low Priority Task for Bulk Messages
-@celery_app.task(name="send_bulk_notification")
-def send_bulk_notification(emails: list, message: str):
-    logger.info(f"Processing bulk notification for {len(emails)} recipients")
-    time.sleep(4)  # Simulating a heavy batch job
-    return {"status": "sent", "priority": "low", "count": len(emails)}
+@celery_app.task(name="app.tasks.send_bulk_notification")
+def send_bulk_notification(emails: list[str], message: str):
+    time.sleep(2)
+    return {"batch_size": len(emails), "status": "sent"}

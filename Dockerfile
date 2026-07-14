@@ -30,7 +30,8 @@ ENV ENABLE_PROFILER=1
 
 
 WORKDIR /app
-RUN chown -R appuser:appuser /app
+# create app user before copying files so --chown works
+RUN adduser --disabled-password --gecos "" appuser || true
 
 COPY --from=builder /root/.local /root/.local
 COPY --chown=appuser:appuser . .
@@ -38,5 +39,4 @@ COPY --chown=appuser:appuser . .
 # install dependencies for find docker
 ENV PATH=/root/.local/bin:$PATH
 
-RUN adduser --disabled-password appuser
 USER appuser

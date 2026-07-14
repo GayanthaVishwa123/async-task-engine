@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: async-task-engine:latest
+    restart: unless-stopped 
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy 
+    networks:
+      - app-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: async-task-engine:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: celery -A app.tasks.celery_app worker --loglevel=info -Q high_priority,low_priority
+
+  redis:
+    image: redis:6-alpine
+    restart: unless-stopped
+    healthcheck: # මේක තමයි පට්ටම වැදගත් කෑල්ල
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo_data:

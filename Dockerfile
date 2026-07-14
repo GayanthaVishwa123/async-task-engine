@@ -1,42 +1,37 @@
-# Builder
+# --- Stage 1: Builder ---
+FROM python:3.9-slim AS builder
 
-# python image
-FROM  python:3.9-slim AS builder
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# create a working directory
 WORKDIR /app
 
-# install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-# second stage
-
-FROM  python:3.9-slim
+# --- Stage 2: Runner ---
+FROM python:3.9-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
-# profile enable
 ENV ENABLE_PROFILER=1
 
-
 WORKDIR /app
-RUN chown -R appuser:appuser /app
 
-COPY --from=builder /root/.local /root/.local
+# appuser 
+RUN adduser --disabled-password --gecos "" appuser
+
+
+# 1. builder stage to runner stage copy
+COPY --from=builder /root/.local /home/appuser/.local
+
+# 2. add permmission to appuser folder
+RUN chown -R appuser:appuser /home/appuser/.local
+
+# 3. appuser in the path add
+ENV PATH=/home/appuser/.local/bin:$PATH
+
 COPY --chown=appuser:appuser . .
 
-# install dependencies for find docker
-ENV PATH=/root/.local/bin:$PATH
-
-RUN adduser --disabled-password appuser
 USER appuser

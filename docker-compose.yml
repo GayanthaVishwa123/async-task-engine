@@ -16,7 +16,7 @@ services:
         condition: service_healthy 
     networks:
       - app-network
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   worker:
     build:
@@ -31,7 +31,7 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    command: celery -A app.tasks.celery_app worker --loglevel=info -Q high_priority,low_priority
+    command: python -m  celery -A app.tasks.celery_app worker --loglevel=info -Q high_priority,low_priority
 
   redis:
     image: redis:6-alpine
